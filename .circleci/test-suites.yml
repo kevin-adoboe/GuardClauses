@@ -1,0 +1,5 @@
+name: unit tests
+# Test atoms are the C# files in the test project that contain xUnit tests.
+discover: grep -rlE '^\s*\[(Fact|Theory)' test/GuardClauses.UnitTests --include='*.cs' | sort
+# Runs the classes declared in the given files and writes JUnit (with file attributes).
+run: .circleci/run-unit-tests.sh "<< outputs.junit >>" << test.atoms >>

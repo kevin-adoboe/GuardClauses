@@ -1,0 +1,35 @@
+version: 2.1
+
+jobs:
+  build-and-test:
+    docker:
+      # CircleCI publishes no cimg/dotnet image, so use Microsoft's official .NET SDK image.
+      # .NET 8 matches the TargetFramework (net8.0) and the existing GitHub Actions build.
+      - image: mcr.microsoft.com/dotnet/sdk:8.0
+    steps:
+      - checkout
+      # No NuGet lockfile in the repo, so the cache key is based on the project files.
+      - restore_cache:
+          keys:
+            - nuget-v1-{{ checksum "Directory.Build.props" }}-{{ checksum "src/GuardClauses/GuardClauses.csproj" }}-{{ checksum "test/GuardClauses.UnitTests/GuardClauses.UnitTests.csproj" }}
+      - run:
+          name: Install dependencies
+          command: dotnet restore
+      - save_cache:
+          key: nuget-v1-{{ checksum "Directory.Build.props" }}-{{ checksum "src/GuardClauses/GuardClauses.csproj" }}-{{ checksum "test/GuardClauses.UnitTests/GuardClauses.UnitTests.csproj" }}
+          paths:
+            - ~/.nuget/packages
+      - run:
+          name: Build
+          command: dotnet build --configuration Release --no-restore
+      - run:
+          name: Test
+          command: circleci testsuite run "unit tests"
+      - store_test_results:
+          path: test-results
+      # No lint step: the repo has no linter configured.
+
+workflows:
+  build:
+    jobs:
+      - build-and-test
