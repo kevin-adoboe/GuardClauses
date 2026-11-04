@@ -1,0 +1,26 @@
+version: 2.1
+
+jobs:
+  guardclauses:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup-dotnet:
+          with:
+            dotnet-version: "8.0.x"
+      - setup-dotnet/restore
+      - run:
+          name: Build
+          command: dotnet build --configuration Release --no-restore
+      - run:
+          name: Test
+          command: circleci testsuite run "guardclauses unit tests"
+
+workflows:
+  ci:
+    jobs:
+      - guardclauses
+
+functions:
+  setup-dotnet: github.com/circleci-functions/setup-dotnet@v0.1.0

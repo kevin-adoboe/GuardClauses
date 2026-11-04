@@ -1,0 +1,14 @@
+name: guardclauses unit tests
+discover: grep -rlE --include='*.cs' '\[(Fact|Theory)' test/GuardClauses.UnitTests
+run: |
+  filter=$(for f in << test.atoms >>; do printf 'FullyQualifiedName~.%s.|' "$(basename "$f" .cs)"; done)
+  rc=0
+  dotnet test test/GuardClauses.UnitTests/GuardClauses.UnitTests.csproj \
+    --configuration Release --no-build \
+    --filter "${filter%|}" \
+    --logger "junit;LogFilePath=<< outputs.junit >>" || rc=$?
+  # JunitXml.TestLogger omits the file attribute; each test class lives in <ClassName>.cs
+  sed -i -E 's#<testcase classname="([^"]*\.)?([^".]+)"#<testcase file="test/GuardClauses.UnitTests/\2.cs" classname="\1\2"#' "<< outputs.junit >>"
+  exit $rc
+options:
+  store-test-results: true
