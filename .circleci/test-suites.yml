@@ -1,0 +1,15 @@
+name: unit tests
+discover: grep -rlE '^\s*\[(Fact|Theory)' --include='*.cs' test/GuardClauses.UnitTests
+run: |
+  filter=$(for f in << test.atoms >>; do printf 'FullyQualifiedName~GuardClauses.UnitTests.%s.|' "$(basename "$f" .cs)"; done)
+  status=0
+  dotnet test test/GuardClauses.UnitTests/GuardClauses.UnitTests.csproj \
+    --configuration Release --no-build \
+    --filter "${filter%|}" \
+    --logger "junit;LogFilePath=<< outputs.junit >>" || status=$?
+  # JunitXml.TestLogger doesn't emit a file attribute; test classes map 1:1 to files.
+  sed -i -E 's#<testcase classname="GuardClauses\.UnitTests\.([A-Za-z0-9_]+)"#<testcase file="test/GuardClauses.UnitTests/\1.cs" classname="GuardClauses.UnitTests.\1"#' "<< outputs.junit >>"
+  # Keep a copy where the job's store_test_results step uploads from.
+  mkdir -p test-results
+  cp "<< outputs.junit >>" "test-results/$(basename "<< outputs.junit >>").xml"
+  exit $status

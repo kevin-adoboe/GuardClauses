@@ -1,0 +1,33 @@
+version: 2.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/dotnet:8.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            # No NuGet lockfile in the repo, so key on the project files instead.
+            - nuget-v1-{{ checksum "src/GuardClauses/GuardClauses.csproj" }}-{{ checksum "test/GuardClauses.UnitTests/GuardClauses.UnitTests.csproj" }}-{{ checksum "Directory.Build.props" }}
+            - nuget-v1-
+      - run:
+          name: Restore dependencies
+          command: dotnet restore
+      - save_cache:
+          key: nuget-v1-{{ checksum "src/GuardClauses/GuardClauses.csproj" }}-{{ checksum "test/GuardClauses.UnitTests/GuardClauses.UnitTests.csproj" }}-{{ checksum "Directory.Build.props" }}
+          paths:
+            - ~/.nuget/packages
+      - run:
+          name: Build
+          command: dotnet build --configuration Release --no-restore
+      - run:
+          name: Test
+          command: circleci testsuite run "unit tests"
+      - store_test_results:
+          path: test-results
+
+workflows:
+  main:
+    jobs:
+      - build-and-test
