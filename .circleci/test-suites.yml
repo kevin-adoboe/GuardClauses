@@ -1,0 +1,3 @@
+name: unit tests
+discover: grep -rlE --include='*.cs' --exclude-dir=bin --exclude-dir=obj '^[[:space:]]*\[(Fact|Theory)' test/GuardClauses.UnitTests | sort
+run: .circleci/run-dotnet-tests.sh "<< outputs.junit >>" << test.atoms >>
