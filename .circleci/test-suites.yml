@@ -1,0 +1,19 @@
+name: unit tests
+# Test atoms are the xUnit test files; each file holds one test class with the same name.
+discover: grep -rlE '^[[:space:]]*\[(Fact|Theory)' test/GuardClauses.UnitTests --include='*.cs' | sort
+run: |
+  set -o pipefail
+  filter=""
+  for f in << test.atoms >>; do filter="${filter}FullyQualifiedName~.$(basename "$f" .cs).|"; done
+  status=0
+  dotnet test test/GuardClauses.UnitTests/GuardClauses.UnitTests.csproj \
+    --configuration Release --no-restore \
+    --filter "${filter%|}" \
+    --logger "junit;LogFilePath=<< outputs.junit >>;FailureBodyFormat=Verbose" || status=$?
+  # The JUnit logger does not write a file attribute; add it from each atom's class name.
+  for f in << test.atoms >>; do
+    sed -i -E "s|<testcase classname=\"([^\"]*\.)?$(basename "$f" .cs)\"|& file=\"$f\"|" "<< outputs.junit >>"
+  done
+  exit $status
+options:
+  store-test-results: true

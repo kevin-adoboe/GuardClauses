@@ -1,0 +1,26 @@
+version: 2.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - dotnet:
+          with:
+            dotnet-version: "8.0.x"
+      - dotnet/restore
+      - run:
+          name: Build
+          command: dotnet build --configuration Release --no-restore
+      - run:
+          name: Test
+          command: circleci testsuite run "unit tests"
+
+workflows:
+  ci:
+    jobs:
+      - build-and-test
+
+functions:
+  dotnet: github.com/circleci-functions/setup-dotnet@v0.1.0
