@@ -1,0 +1,18 @@
+name: unit tests
+# Atoms are test files. Each file holds one xUnit test class named after the file.
+discover: grep -rlE '^\s*\[(Fact|Theory)' test/GuardClauses.UnitTests --include='*.cs' | sort
+run: |
+  filter=""
+  for f in << test.atoms >>; do
+    filter="${filter:+$filter|}FullyQualifiedName~.$(basename "$f" .cs)."
+  done
+  status=0
+  dotnet test test/GuardClauses.UnitTests/GuardClauses.UnitTests.csproj \
+    --configuration Release --no-build --verbosity normal \
+    --filter "$filter" \
+    --logger "junit;LogFilePath=<< outputs.junit >>" || status=$?
+  # JunitXml.TestLogger has no file attribute; derive it from the class name.
+  sed -i -E 's#<testcase classname="(([^"]*\.)?([^".]+))"#<testcase file="test/GuardClauses.UnitTests/\3.cs" classname="\1"#' "<< outputs.junit >>"
+  exit $status
+options:
+  store-test-results: true
